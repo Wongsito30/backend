@@ -1,46 +1,56 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from typing import List
+from starlette.responses import RedirectResponse
+from sqlalchemy.orm import session
+from fastapi.params import Depends
+from BD.conexion import engine, sessionlocal
+import BD.schemas as page_schemas
+import BD.conexion as page_conexion
+import BD.models as page_models
 
+page_models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
-class proveedor(BaseModel):
-    id: int
-    nombre: str
-    lugar: int
-    telefono: str
-    correo: float
 
-proveedores = [proveedor(id="1",nombre="Levis", lugar="USA",telefono="6681234567", correo="levi@gmail.com")]
-
-@app.get("/proveedorclass")
-async def proveedorclass():
-    return proveedores
-
-def search_proveedor(id: id):
-    proveer = filter(lambda proveedor: proveedor.idp == id, proveedor)
+def get_prov():
     try:
-        return list(proveer)[0]
-    except:
-        return {"ERROR": "proveedor no encontrado"}
+        db = sessionlocal()
+        yield db
+    finally:
+        db.close()
 
-@app.post("/addproveedor/")
-async def addproveedor(proveedor: proveedor):
-    if type(search_proveedor(proveedor.id)) == proveedor:
-        return {"ERROR": "Proveedor ya existe"}
-    else:    
-        proveedor.append(proveedor)
+@app.get("/")
+async def Main():
+    return RedirectResponse(url="/docs/")
 
-@app.put("/modproveedor/")
-async def modproveedor(proveedor: proveedor):
-    for index, savedproveer in enumerate(proveedores):
-        if savedproveer.id == proveedor.id:
-            proveedores[index] = proveedor
-            return {"OK": "proveedor modificado"}
-        
+@app.get("/prov/", response_model=List[page_schemas.proveedor])
+async def show_prov(db:session=Depends(get_prov)):
+    proveedor = db.query(page_models.proveedor).all()
+    return proveedor
 
-@app.delete("/delproveedor/{id}")
-async def delproveerdor(id: int):
-    for index, savedproveer in enumerate(proveedor):
-        if savedproveer.id == id:
-            del proveedores[index]
-            return {"OK": "proveedor eliminado"}
+@app.post("/prov/",response_model=page_schemas.proveedor)
+def create_prov(entrada:page_schemas.proveedor,db:session=Depends(get_prov)):
+    proveedor = page_models.proveedor(nombreproveedor = entrada.nombreproveedor,procedencia = entrada.procedencia, telefono = entrada.telefono, correo = entrada.correo)
+    db.add(proveedor)
+    db.commit()
+    db.refresh(proveedor)
+    return proveedor
+
+@app.put("/prov/{prov_id}",response_model=page_schemas.proveedor)
+def mod_prov(provid: int, entrada:page_schemas.proveedor_update,db:session=Depends(get_prov)):
+    prov = db.query(page_models.proveedor).filter_by(id=provid).first()
+    prov.nombreproveedor = entrada.nombreproveedor
+    prov.procedencia = entrada.procedencia
+    prov.telefono = entrada.telefono
+    prov.correo = entrada.correo
+    db.commit()
+    db.refresh(prov)
+    return prov
+
+@app.delete("/prov/{prov_id}",response_model=page_schemas.respuesta)
+def del_prov(provid: int,db:session=Depends(get_prov)):
+    eliprov = db.query(page_models.proveedor).filter_by(id=provid).first()
+    db.delete(eliprov)
+    db.commit()
+    respuesta = page_schemas.respuesta(mensaje="Eliminado exitosamente")
+    return respuesta

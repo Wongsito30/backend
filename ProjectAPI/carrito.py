@@ -1,57 +1,58 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from typing import List
+from starlette.responses import RedirectResponse
+from sqlalchemy.orm import session
+from fastapi.params import Depends
+from BD.conexion import engine, sessionlocal
+import BD.schemas as page_schemas
+import BD.conexion as page_conexion
+import BD.models as page_models
 
+page_models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
-class product(BaseModel):
-    id: int
-    nickname: str
-    nombre: str
-    stock: int
-    talla: str
-    cantidad: int
-    precio: float
-    
 
-products = [product(id="1",nickname="sahir",nombre="pantalon levi", stock="12",cantidad="12",talla="G", precio="999.99")]
-
-@app.get("/cartclass")
-async def cartclass():
-    return products
-
-@app.get("/usercart/")
-async def usercart(nickname: str):
-    usuario = filter(lambda product: product.nickname == nickname, product)
+def get_car():
     try:
-        return list(usuario)[0]
-    except:
-        return {"ERROR": "usuario no encontrado"}
-    
-def search_cart(id: id):
-    usuario = filter(lambda product: product.id == id, products)
-    try:
-        return list(usuario)[0]
-    except:
-        return {"ERROR": "producto no encontrado"}
+        db = sessionlocal()
+        yield db
+    finally:
+        db.close()
 
-@app.post("/addcart/")
-async def addcart (product: product):
-    if type(search_cart(product.id)) == product:
-        return {"ERROR": "usuario ya existe"}
-    else:    
-        products.append(product)
+@app.get("/")
+async def Main():
+    return RedirectResponse(url="/docs/")
 
-@app.put("/modcart/")
-async def modcart(product: product):
-    for index, savedproduct in enumerate(products):
-        if savedproduct.id == product.id:
-            products[index] = product
-            return {"OK": "producto modificado"}
-        
+@app.get("/car/", response_model=List[page_schemas.Car])
+async def show_car(db:session=Depends(get_car)):
+    carro = db.query(page_models.Car).all()
+    return carro
 
-@app.delete("/delcart/{id}")
-async def delcart(id: int):
-    for index, savedproduct in enumerate(products):
-        if savedproduct.id == id:
-            del products[index]
-            return {"OK": "producto eliminado"}
+@app.post("/car/",response_model=page_schemas.Car)
+def create_car(entrada:page_schemas.Car,db:session=Depends(get_car)):
+    carro = page_models.Car(nickname = entrada.nickname, nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, cantidad = entrada.cantidad, preciototal = entrada.preciototal, imagen = entrada.imagen)
+    db.add(carro)
+    db.commit()
+    db.refresh(carro)
+    return carro
+
+@app.put("/car/{car_id}",response_model=page_schemas.Car)
+def mod_car(carid: int, entrada:page_schemas.car_update,db:session=Depends(get_car)):
+    car = db.query(page_models.Car).filter_by(id=carid).first()
+    car.nombreproducto = entrada.nombreproducto
+    car.stock = entrada.stock
+    car.talla = entrada.talla
+    car.cantidad = entrada.cantidad
+    car.preciototal = entrada.preciototal
+    car.imagen = entrada.imagen
+    db.commit()
+    db.refresh(car)
+    return car
+
+@app.delete("/car/{car_id}",response_model=page_schemas.respuesta)
+def del_car(carid: int,db:session=Depends(get_car)):
+    elicar = db.query(page_models.Car).filter_by(id=carid).first()
+    db.delete(elicar)
+    db.commit()
+    respuesta = page_schemas.respuesta(mensaje="Eliminado exitosamente")
+    return respuesta

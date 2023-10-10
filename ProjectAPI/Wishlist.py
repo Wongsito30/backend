@@ -1,57 +1,57 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from typing import List
+from starlette.responses import RedirectResponse
+from sqlalchemy.orm import session
+from fastapi.params import Depends
+from BD.conexion import engine, sessionlocal
+import BD.schemas as page_schemas
+import BD.conexion as page_conexion
+import BD.models as page_models
 
+page_models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
-class product(BaseModel):
-    id: int
-    nickname: str
-    nombre: str
-    stock: int
-    talla: str
-    cantidad: int
-    precio: float
-    
 
-products = [product(id="1",nickname="sahir",nombre="pantalon levi", stock="12",cantidad="12",talla="G", precio="999.99")]
-
-@app.get("/wishclass")
-async def wishclass():
-    return products
-
-@app.get("/userwish/")
-async def userwish(nickname: str):
-    usuario = filter(lambda product: product.nickname == nickname, product)
+def get_wish():
     try:
-        return list(usuario)[0]
-    except:
-        return {"ERROR": "usuario no encontrado"}
-    
-def search_wish(id: id):
-    usuario = filter(lambda product: product.id == id, products)
-    try:
-        return list(usuario)[0]
-    except:
-        return {"ERROR": "producto no encontrado"}
+        db = sessionlocal()
+        yield db
+    finally:
+        db.close()
 
-@app.post("/addwish/")
-async def addwish (product: product):
-    if type(search_wish(product.id)) == product:
-        return {"ERROR": "usuario ya existe"}
-    else:    
-        products.append(product)
+@app.get("/")
+async def Main():
+    return RedirectResponse(url="/docs/")
 
-@app.put("/modwish/")
-async def modwish(product: product):
-    for index, savedproduct in enumerate(products):
-        if savedproduct.id == product.id:
-            products[index] = product
-            return {"OK": "producto modificado"}
-        
+@app.get("/wish/", response_model=List[page_schemas.Wishlist])
+async def show_wish(db:session=Depends(get_wish)):
+    wishlist = db.query(page_models.Wishlist).all()
+    return wishlist
 
-@app.delete("/delwish/{id}")
-async def delwish(id: int):
-    for index, savedproduct in enumerate(products):
-        if savedproduct.id == id:
-            del products[index]
-            return {"OK": "producto eliminado"}
+@app.post("/wish/",response_model=page_schemas.Wishlist)
+def create_wish(entrada:page_schemas.Wishlist,db:session=Depends(get_wish)):
+    wishlist = page_models.Wishlist(nickname = entrada.nickname, nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, cantidad = entrada.cantidad, imagen = entrada.imagen)
+    db.add(wishlist)
+    db.commit()
+    db.refresh(wishlist)
+    return wishlist
+
+@app.put("/wish/{wish_id}",response_model=page_schemas.Wishlist)
+def mod_wish(wishid: int, entrada:page_schemas.Wishlist_update,db:session=Depends(get_wish)):
+    wish = db.query(page_models.Wishlist).filter_by(id=wishid).first()
+    wish.nombreproducto = entrada.nombreproducto
+    wish.stock = entrada.stock
+    wish.talla = entrada.talla
+    wish.cantidad = entrada.cantidad
+    wish.imagen = entrada.imagen
+    db.commit()
+    db.refresh(wish)
+    return wish
+
+@app.delete("/wish/{wish_id}",response_model=page_schemas.respuesta)
+def del_wish(wishid: int,db:session=Depends(get_wish)):
+    eliwish = db.query(page_models.Wishlist).filter_by(id=wishid).first()
+    db.delete(eliwish)
+    db.commit()
+    respuesta = page_schemas.respuesta(mensaje="Eliminado exitosamente")
+    return respuesta

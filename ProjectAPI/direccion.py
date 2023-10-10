@@ -1,48 +1,59 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from typing import List
+from starlette.responses import RedirectResponse
+from sqlalchemy.orm import session
+from fastapi.params import Depends
+from BD.conexion import engine, sessionlocal
+import BD.schemas as page_schemas
+import BD.conexion as page_conexion
+import BD.models as page_models
 
+page_models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
-class direccion(BaseModel):
-    id: int
-    nombrecalle: str
-    numerocasa: int
-    cp: int
-    colonia: float
-    estado: str
-    municipio: str
 
-direcciones = [direccion(id="1",nombrecalle="Lomas", numerocasa="123",cp="81234", colonia="Teresa", estado="Sinaloa", municipio="Guasave")]
-
-@app.get("/direccionclass")
-async def direccionclass():
-    return direcciones
-
-def search_direccion(id: id):
-    direccion = filter(lambda direccion: direccion.id == id, direccion)
+def get_direction():
     try:
-        return list(direcciones)[0]
-    except:
-        return {"ERROR": "direccion no encontrada"}
+        db = sessionlocal()
+        yield db
+    finally:
+        db.close()
 
-@app.post("/adddireccion/")
-async def adddireccion(direccion: direccion):
-    if type(search_direccion(direccion.id)) == direccion:
-        return {"ERROR": "direccion ya existe"}
-    else:    
-        direcciones.append(direccion)
+@app.get("/")
+async def Main():
+    return RedirectResponse(url="/docs/")
 
-@app.put("/moddireccion/")
-async def moddireccion(direccion: direccion):
-    for index, saveddireccion in enumerate(direcciones):
-        if saveddireccion.id == direccion.id:
-            direcciones[index] = direccion
-            return {"OK": "direccion modificada"}
-        
+@app.get("/direction/", response_model=List[page_schemas.Direction])
+async def show_direction(db:session=Depends(get_direction)):
+    direccion = db.query(page_models.Direction).all()
+    return direccion
 
-@app.delete("/deldireccion/{id}")
-async def deldireccion(id: int):
-    for index, saveddireccion in enumerate(direcciones):
-        if saveddireccion.id == id:
-            del direcciones[index]
-            return {"OK": "direccion eliminada"}
+@app.post("/direction/",response_model=page_schemas.Direction)
+def create_direction(entrada:page_schemas.Direction,db:session=Depends(get_direction)):
+    direccion = page_models.Direction(nombrecalle = entrada.nombrecalle,numerocasa = entrada.numerocasa, cp = entrada.cp, colonia = entrada.colonia, municipio = entrada.municipio, estado = entrada.estado, nickname = entrada.nickname)
+    db.add(direccion)
+    db.commit()
+    db.refresh(direccion)
+    return direccion
+
+@app.put("/direction/{direction_id}",response_model=page_schemas.Direction)
+def mod_direction(directionid: int, entrada:page_schemas.Direction_update,db:session=Depends(get_direction)):
+    direccion = db.query(page_models.Direction).filter_by(id=directionid).first()
+    direccion.nombrecalle = entrada.nombrecalle
+    direccion.numerocasa = entrada.numerocasa
+    direccion.cp = entrada.cp
+    direccion.colonia = entrada.colonia
+    direccion.municipio = entrada.municipio
+    direccion.estado = entrada.estado
+    direccion.nickname = entrada.nickname
+    db.commit()
+    db.refresh(direccion)
+    return direccion
+
+@app.delete("/direction/{direction_id}",response_model=page_schemas.respuesta)
+def del_direction(directionid: int,db:session=Depends(get_direction)):
+    elidireccion = db.query(page_models.Direction).filter_by(id=directionid).first()
+    db.delete(elidireccion)
+    db.commit()
+    respuesta = page_schemas.respuesta(mensaje="Eliminado exitosamente")
+    return respuesta
