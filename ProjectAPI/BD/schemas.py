@@ -15,7 +15,30 @@ class User(BaseModel):
 class User_update(BaseModel):
      nickname: str
    
-     
+
+     class Config:
+       from_attributes = True
+
+class contrasena_update(BaseModel):
+     contrasena: str
+   
+
+     class Config:
+       from_attributes = True
+
+class email_update(BaseModel):
+     email: str
+   
+
+     class Config:
+       from_attributes = True      
+
+class User_update_admin(BaseModel):
+     nickname: str
+     contrasena: str
+     email: str
+     estado: int
+
      class Config:
        from_attributes = True
 
@@ -27,6 +50,10 @@ class Product(BaseModel):
      precio: float
      descripcion: str
      imagen: Optional[bytes]
+     categoria: str
+     nombreproveedor: str
+     nombresucursal: str
+
      
      class Config:
        from_attributes = True
@@ -38,6 +65,9 @@ class product_update(BaseModel):
      precio: float
      descripcion: str
      imagen: Optional[bytes]
+     categoria: str
+     nombreproveedor: str
+     nombresucursal: str
    
      
      class Config:
@@ -50,9 +80,14 @@ class Car(BaseModel):
      stock: int
      talla: str
      cantidad: int
-     preciototal: float
      imagen: Optional[bytes]
+     precio: float
+     categoria: str
+     nombresucursal: str
+     nombreproveedor: str
+     preciototal: float
      
+
      class Config:
        from_attributes = True
 
@@ -62,8 +97,18 @@ class car_update(BaseModel):
       stock: int
       talla: str
       cantidad: int
-      preciototal: float
       imagen: Optional[bytes]
+      precio: float
+      categoria: str
+      nombresucursal: str
+      nombreproveedor: str
+      preciototal: float
+
+      class Config:
+       from_attributes = True
+
+class cant_update(BaseModel):
+      cantidad: int
       
       class Config:
        from_attributes = True
@@ -76,6 +121,9 @@ class Wishlist(BaseModel):
      talla: str
      cantidad: int
      imagen: Optional[bytes]
+     categoria: str
+     nombreproveedor: str
+     nombresucursal: str
      
      class Config:
        from_attributes = True
@@ -87,6 +135,9 @@ class Wishlist_update(BaseModel):
       talla: str
       cantidad: int
       imagen: Optional[bytes]
+      categoria: str
+      nombreproveedor: str
+      nombresucursal: str
       
       class Config:
        from_attributes = True
@@ -156,5 +207,75 @@ class proveedor_update(BaseModel):
       class Config:
        from_attributes = True
 
+class Historial(BaseModel):
+     id: Optional[int] = None
+     nombreproducto: str
+     talla: str
+     cantidad: int
+     preciototal: float
+     nickname: str
+     categoria: str
+     nombreproveedor: str
+     nombresucursal: str
+     
+     class Config:
+       from_attributes = True
+
+class historial_update(BaseModel):
+    nombreproducto: str
+    talla: str
+    cantidad: int
+    preciototal: float
+    nickname: str
+    categoria: str
+    nombreproveedor: str
+    nombresucursal: str
+    
+    class Config:
+       from_attributes = True
+
+class sucursal(BaseModel):
+     id: Optional[int] = None
+     nombresucursal: str
+     correo: str
+     telefono: str
+     direccion: str
+     
+     class Config:
+       from_attributes = True
+
+class sucursal_update(BaseModel):
+    id: Optional[int] = None
+    nombresucursal: str
+    correo: str
+    telefono: str
+    direccion: str
+    
+    class Config:
+       from_attributes = True
+
+
+class stock(BaseModel):
+     id: Optional[int] = None
+     stockcant: int
+     nombreproducto: str
+     talla: str
+     nombresucursal: str
+     nombreproveedor: str
+     
+     class Config:
+       from_attributes = True
+
+class stock_update(BaseModel):
+     stockcant: int
+     nombreproducto: str
+     talla: str
+     nombresucursal: str
+     nombreproveedor: str
+     
+     class Config:
+       from_attributes = True
+
+       
 class respuesta(BaseModel):
      mensaje: str

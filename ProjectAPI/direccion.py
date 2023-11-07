@@ -28,6 +28,18 @@ async def show_direction(db:session=Depends(get_direction)):
     direccion = db.query(page_models.Direction).all()
     return direccion
 
+@app.get("/searchcalle/{callename}", response_model=List[page_schemas.Direction])
+async def show_calle_user(callename: str, db: session = Depends(get_direction)):
+    # Filtra los productos que coinciden con el nombre
+    direccion = db.query(page_models.Direction).filter(page_models.Direction.nombrecalle == callename).all()
+    return direccion
+
+@app.get("/searchdir/{dirname}", response_model=List[page_schemas.Direction])
+async def show_dir_user(dirname: str, db: session = Depends(get_direction)):
+    # Filtra los productos que coinciden con el nombre
+    direccion = db.query(page_models.Direction).filter(page_models.Direction.nickname == dirname).all()
+    return direccion
+
 @app.post("/direction/",response_model=page_schemas.Direction)
 def create_direction(entrada:page_schemas.Direction,db:session=Depends(get_direction)):
     direccion = page_models.Direction(nombrecalle = entrada.nombrecalle,numerocasa = entrada.numerocasa, cp = entrada.cp, colonia = entrada.colonia, municipio = entrada.municipio, estado = entrada.estado, nickname = entrada.nickname)

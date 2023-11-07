@@ -28,9 +28,15 @@ async def show_wish(db:session=Depends(get_wish)):
     wishlist = db.query(page_models.Wishlist).all()
     return wishlist
 
+@app.get("/searchfav/{favname}", response_model=List[page_schemas.Wishlist])
+async def show_fav_user(favname: str, db: session = Depends(get_wish)):
+    # Filtra los productos que coinciden con el nombre
+    products = db.query(page_models.Wishlist).filter(page_models.Wishlist.nickname == favname).all()
+    return products
+
 @app.post("/wish/",response_model=page_schemas.Wishlist)
 def create_wish(entrada:page_schemas.Wishlist,db:session=Depends(get_wish)):
-    wishlist = page_models.Wishlist(nickname = entrada.nickname, nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, cantidad = entrada.cantidad, imagen = entrada.imagen)
+    wishlist = page_models.Wishlist(nickname = entrada.nickname, nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, cantidad = entrada.cantidad, imagen = entrada.imagen, categoria = entrada.categoria, nombreproveedor = entrada.nombreproveedor, nombresucursal = entrada.nombresucursal)
     db.add(wishlist)
     db.commit()
     db.refresh(wishlist)
@@ -44,6 +50,9 @@ def mod_wish(wishid: int, entrada:page_schemas.Wishlist_update,db:session=Depend
     wish.talla = entrada.talla
     wish.cantidad = entrada.cantidad
     wish.imagen = entrada.imagen
+    wish.categoria = entrada.categoria
+    wish.nombreproveedor = entrada.nombreproveedor
+    wish.nombresucursal = entrada.nombresucursal
     db.commit()
     db.refresh(wish)
     return wish

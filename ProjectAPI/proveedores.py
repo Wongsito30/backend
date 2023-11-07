@@ -28,6 +28,12 @@ async def show_prov(db:session=Depends(get_prov)):
     proveedor = db.query(page_models.proveedor).all()
     return proveedor
 
+@app.get("/searchpro/{proname}", response_model=List[page_schemas.proveedor])
+async def show_pro_user(proname: str, db: session = Depends(get_prov)):
+    # Filtra los productos que coinciden con el nombre
+    proveedor = db.query(page_models.proveedor).filter(page_models.proveedor.nombreproveedor == proname).all()
+    return proveedor
+
 @app.post("/prov/",response_model=page_schemas.proveedor)
 def create_prov(entrada:page_schemas.proveedor,db:session=Depends(get_prov)):
     proveedor = page_models.proveedor(nombreproveedor = entrada.nombreproveedor,procedencia = entrada.procedencia, telefono = entrada.telefono, correo = entrada.correo)

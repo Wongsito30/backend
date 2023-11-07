@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -28,9 +28,23 @@ async def show_car(db:session=Depends(get_car)):
     carro = db.query(page_models.Car).all()
     return carro
 
+@app.get("/searchcar/{carname}", response_model=List[page_schemas.Car])
+async def show_car_user(carname: str, db: session = Depends(get_car)):
+    # Filtra los productos que coinciden con el nombre
+    products = db.query(page_models.Car).filter(page_models.Car.nickname == carname).all()
+    
+    if not products:
+        raise HTTPException(status_code=404, detail=f"No se encontraron carros para el usuario {carname}")
+
+    # Multiplica la cantidad por el precio para cada carro encontrado
+    for car in products:
+        car.preciototal = car.cantidad * car.precio
+
+    return products
+
 @app.post("/car/",response_model=page_schemas.Car)
 def create_car(entrada:page_schemas.Car,db:session=Depends(get_car)):
-    carro = page_models.Car(nickname = entrada.nickname, nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, cantidad = entrada.cantidad, preciototal = entrada.preciototal, imagen = entrada.imagen)
+    carro = page_models.Car(nickname = entrada.nickname, nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, cantidad = entrada.cantidad, imagen = entrada.imagen, precio = entrada.precio, categoria = entrada.categoria, nombresucursal= entrada.nombresucursal, nombreproveedor = entrada.nombreproveedor)
     db.add(carro)
     db.commit()
     db.refresh(carro)
@@ -43,11 +57,21 @@ def mod_car(carid: int, entrada:page_schemas.car_update,db:session=Depends(get_c
     car.stock = entrada.stock
     car.talla = entrada.talla
     car.cantidad = entrada.cantidad
-    car.preciototal = entrada.preciototal
     car.imagen = entrada.imagen
+    car.categoria = entrada.categoria
+    car.nombresucursal = entrada.nombresucursal
+    car.nombreproveedor = entrada.nombreproveedor
     db.commit()
     db.refresh(car)
     return car
+
+@app.put("/carcanti/{cantidad_id}",response_model=page_schemas.Car)
+def mod_cant(cantid: int, entrada:page_schemas.cant_update,db:session=Depends(get_car)):
+    cant = db.query(page_models.Car).filter_by(id=cantid).first()
+    cant.cantidad = entrada.cantidad
+    db.commit()
+    db.refresh(cant)
+    return cant
 
 @app.delete("/car/{car_id}",response_model=page_schemas.respuesta)
 def del_car(carid: int,db:session=Depends(get_car)):

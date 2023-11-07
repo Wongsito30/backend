@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI , HTTPException
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -27,6 +27,18 @@ async def Main():
 async def show_pagos(db:session=Depends(get_pagos)):
     pay = db.query(page_models.pagos).all()
     return pay
+
+@app.get("/searchpago/{pagoname}", response_model=List[page_schemas.pagos])
+async def show_pago_user(pagoname: str, db: session = Depends(get_pagos)):
+    # Filtra los productos que coinciden con el nombre
+    pagos = db.query(page_models.pagos).filter(page_models.pagos.nickname == pagoname).all()
+    return pagos
+
+@app.get("/searchtar/{tarname}", response_model=List[page_schemas.pagos])
+async def show_pago_user(tarname: str, db: session = Depends(get_pagos)):
+    # Filtra los productos que coinciden con el nombre
+    pagos = db.query(page_models.pagos).filter(page_models.pagos.numerotarjeta == tarname).all()
+    return pagos
 
 @app.post("/pagos/",response_model=page_schemas.pagos)
 def create_pagos(entrada:page_schemas.pagos,db:session=Depends(get_pagos)):
