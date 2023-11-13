@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -10,6 +10,13 @@ from BD.conexion import engine, sessionlocal
 import BD.schemas as page_schemas
 import BD.conexion as page_conexion
 import BD.models as page_models
+import bcrypt
+import random
+import yagmail
+
+email = 'progamernazi@gmail.com'
+passw = 'rcqiqlitxtgqraon'
+yag = yagmail.SMTP(user=email, password=passw)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 page_models.Base.metadata.create_all(bind=engine)
@@ -23,6 +30,7 @@ def get_user():
     finally:
         db.close()
 
+
 @app.get("/")
 async def Main():
     return RedirectResponse(url="/docs/")
@@ -32,16 +40,26 @@ async def show_users(db:session=Depends(get_user)):
     usuarios = db.query(page_models.User).all()
     return usuarios
 
-@app.get("/searchusercorreo/{Correo}", response_model=List[page_schemas.User])
+@app.get("/searchusercorreo/{Correo}")
 async def show_pass_correo(correo: str, db: session = Depends(get_user)):
     passs = db.query(page_models.User).filter(page_models.User.email == correo).first()
-    user = [passs.contrasena]
-    return [user]
+    if not passs:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    destinatario = correo
+    asunto = 'codigo de recuperacion para: '+ passs.nickname
+    mensaje = str(passs.codigo)
+    
+    yag.send(destinatario, asunto, mensaje)
+
+    mensaje = ("codigo enviado")
+
+    return mensaje
 
 @app.post("/users/",response_model=page_schemas.User)
 def create_user(entrada:page_schemas.User,db:session=Depends(get_user)):
     hashed_password = pwd_context.hash(entrada.contrasena)
-    usuario = page_models.User(nickname = entrada.nickname,contrasena = hashed_password, email = entrada.email, estado = entrada.estado)
+    codigo1 = random.randint(1000, 9999)
+    usuario = page_models.User(nickname = entrada.nickname,contrasena = hashed_password, email = entrada.email, estado = entrada.estado, codigo = codigo1)
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
@@ -55,10 +73,11 @@ def mod_user(usuarioid: int, entrada:page_schemas.User_update,db:session=Depends
     db.refresh(usuario)
     return usuario
 
-@app.put("/contrasena/{contra_id}",response_model=page_schemas.User)
-def mod_contra(contraid: int, entrada:page_schemas.contrasena_update,db:session=Depends(get_user)):
-    usuario = db.query(page_models.User).filter_by(id=contraid).first()
-    usuario.contrasena = entrada.contrasena
+@app.put("/contrasena/{codigo}",response_model=page_schemas.User)
+def mod_contra(codigo: int, entrada:page_schemas.contrasena_update,db:session=Depends(get_user)):
+    usuario = db.query(page_models.User).filter_by(codigo=codigo).first()
+    hashed_password = pwd_context.hash(entrada.contrasena)
+    usuario.contrasena = hashed_password
     db.commit()
     db.refresh(usuario)
     return usuario

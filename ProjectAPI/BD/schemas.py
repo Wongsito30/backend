@@ -42,6 +42,15 @@ class User_update_admin(BaseModel):
      class Config:
        from_attributes = True
 
+class Admin(BaseModel):
+     id: Optional[int] = None
+     admin: str
+     estado: int
+     contrasena: str
+     
+     class Config:
+       from_attributes = True       
+
 class Product(BaseModel):
      id: Optional[int] = None
      nombreproducto: str

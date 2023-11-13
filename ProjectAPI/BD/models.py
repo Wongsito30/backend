@@ -9,6 +9,16 @@ class User(Base):
     contrasena =  Column(String(150))
     email = Column(String(255))
     estado = Column(Integer)
+    codigo = Column(Integer)
+
+class Admin(Base):
+    __tablename__ = 'admins'
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin = Column(String(5))
+    contrasena =  Column(String(150))
+    estado = Column(Integer)
+
 
 class Products(Base):
     __tablename__ = 'Productos'
