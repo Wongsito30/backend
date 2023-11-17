@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import APIRouter, Query
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -10,7 +10,7 @@ import BD.conexion as page_conexion
 import BD.models as page_models
 
 page_models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+router = APIRouter()
 
 
 def get_product():
@@ -20,40 +20,40 @@ def get_product():
     finally:
         db.close()
 
-@app.get("/")
+@router.get("/")
 async def Main():
     return RedirectResponse(url="/docs/")
 
-@app.get("/products/", response_model=List[page_schemas.Product])
+@router.get("/products/", response_model=List[page_schemas.Product])
 async def show_products(db:session=Depends(get_product)):
     productos = db.query(page_models.Products).all()
     return productos
 
-@app.get("/searchcate/{catename}", response_model=List[page_schemas.Product])
+@router.get("/searchcate/{catename}", response_model=List[page_schemas.Product])
 async def show_cat_user(catname: str, db: session = Depends(get_product)):
     # Filtra los productos que coinciden con el nombre
     categoria = db.query(page_models.Products).filter(page_models.Products.categoria == catname).all()
     return categoria
 
-@app.get("/searchproducts/{productname}", response_model=List[page_schemas.Product])
+@router.get("/searchproducts/{productname}", response_model=List[page_schemas.Product])
 async def show_product(productname: str, db: session = Depends(get_product)):
     # Filtra los productos que coinciden con el nombre
     products = db.query(page_models.Products).filter(func.lower(page_models.Products.nombreproducto).ilike(f"%{productname}%")).all()
     return products
 
-@app.get("/searchproductsprov/{proveedorname}", response_model=List[page_schemas.Product])
+@router.get("/searchproductsprov/{proveedorname}", response_model=List[page_schemas.Product])
 async def show_product_prov(proveedorname: str, db: session = Depends(get_product)):
     # Filtra los productos que coinciden con el nombre
     products = db.query(page_models.Products).filter(func.lower(page_models.Products.nombreproveedor).ilike(f"%{proveedorname}%")).all()
     return products
 
-@app.get("/searchproductssuc/{sucursalname}", response_model=List[page_schemas.Product])
+@router.get("/searchproductssuc/{sucursalname}", response_model=List[page_schemas.Product])
 async def show_product_suc(sucursalname: str, db: session = Depends(get_product)):
     # Filtra los productos que coinciden con el nombre
     products = db.query(page_models.Products).filter(func.lower(page_models.Products.nombresucursal).ilike(f"%{sucursalname}%")).all()
     return products
 
-@app.get("/products/precioasc", response_model=List[page_schemas.Product])
+@router.get("/products/precioasc", response_model=List[page_schemas.Product])
 async def get_products_ascending(
     db: session = Depends(get_product),
     field: str = Query("precio")
@@ -65,7 +65,7 @@ async def get_products_ascending(
     products = db.query(page_models.Products).order_by(asc(field)).all()
     return products
 
-@app.get("/products/stockasc", response_model=List[page_schemas.Product])
+@router.get("/products/stockasc", response_model=List[page_schemas.Product])
 async def get_products_ascending(
     db: session = Depends(get_product),
     field: str = Query("stock")
@@ -77,7 +77,7 @@ async def get_products_ascending(
     products = db.query(page_models.Products).order_by(asc(field)).all()
     return products
 
-@app.get("/products/preciodesc", response_model=List[page_schemas.Product])
+@router.get("/products/preciodesc", response_model=List[page_schemas.Product])
 async def get_products_descending(
     db: session = Depends(get_product),
     field: str = Query("precio")
@@ -88,7 +88,7 @@ async def get_products_descending(
     products = db.query(page_models.Products).order_by(desc(field)).all()
     return products
 
-@app.get("/products/stockdesc", response_model=List[page_schemas.Product])
+@router.get("/products/stockdesc", response_model=List[page_schemas.Product])
 async def get_products_descending(
     db: session = Depends(get_product),
     field: str = Query("stock")
@@ -99,7 +99,7 @@ async def get_products_descending(
     products = db.query(page_models.Products).order_by(desc(field)).all()
     return products
 
-@app.post("/products/",response_model=page_schemas.Product)
+@router.post("/products/",response_model=page_schemas.Product)
 def create_product(entrada:page_schemas.Product,db:session=Depends(get_product)):
     producto = page_models.Products(nombreproducto = entrada.nombreproducto,stock = entrada.stock, talla = entrada.talla, precio = entrada.precio, descripcion = entrada.descripcion, imagen = entrada.imagen, categoria = entrada.categoria,nombreproveedor = entrada.nombreproveedor,nombresucursal = entrada.nombresucursal)
     db.add(producto)
@@ -107,7 +107,7 @@ def create_product(entrada:page_schemas.Product,db:session=Depends(get_product))
     db.refresh(producto)
     return producto
 
-@app.put("/products/{producto_id}",response_model=page_schemas.Product)
+@router.put("/products/{producto_id}",response_model=page_schemas.Product)
 def mod_product(productoid: int, entrada:page_schemas.product_update,db:session=Depends(get_product)):
     producto = db.query(page_models.Products).filter_by(id=productoid).first()
     producto.nombreproducto = entrada.nombreproducto
@@ -123,7 +123,7 @@ def mod_product(productoid: int, entrada:page_schemas.product_update,db:session=
     db.refresh(producto)
     return producto
 
-@app.delete("/products/{producto_id}",response_model=page_schemas.respuesta)
+@router.delete("/products/{producto_id}",response_model=page_schemas.respuesta)
 def del_product(productoid: int,db:session=Depends(get_product)):
     eliproducto = db.query(page_models.Products).filter_by(id=productoid).first()
     db.delete(eliproducto)

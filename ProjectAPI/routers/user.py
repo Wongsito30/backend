@@ -1,4 +1,4 @@
-from fastapi import FastAPI,HTTPException
+from fastapi import APIRouter,HTTPException
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -20,7 +20,7 @@ yag = yagmail.SMTP(user=email, password=passw)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 page_models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+router = APIRouter()
 
 
 def get_user():
@@ -31,16 +31,16 @@ def get_user():
         db.close()
 
 
-@app.get("/")
+@router.get("/")
 async def Main():
     return RedirectResponse(url="/docs/")
 
-@app.get("/users/", response_model=List[page_schemas.User])
+@router.get("/users/", response_model=List[page_schemas.User])
 async def show_users(db:session=Depends(get_user)):
     usuarios = db.query(page_models.User).all()
     return usuarios
 
-@app.get("/searchusercorreo/{Correo}")
+@router.get("/searchusercorreo/{Correo}")
 async def show_pass_correo(correo: str, db: session = Depends(get_user)):
     passs = db.query(page_models.User).filter(page_models.User.email == correo).first()
     if not passs:
@@ -55,7 +55,7 @@ async def show_pass_correo(correo: str, db: session = Depends(get_user)):
 
     return mensaje
 
-@app.post("/users/",response_model=page_schemas.User)
+@router.post("/users/",response_model=page_schemas.User)
 def create_user(entrada:page_schemas.User,db:session=Depends(get_user)):
     hashed_password = pwd_context.hash(entrada.contrasena)
     codigo1 = random.randint(1000, 9999)
@@ -65,7 +65,7 @@ def create_user(entrada:page_schemas.User,db:session=Depends(get_user)):
     db.refresh(usuario)
     return usuario
 
-@app.put("/users/{usuario_id}",response_model=page_schemas.User)
+@router.put("/users/{usuario_id}",response_model=page_schemas.User)
 def mod_user(usuarioid: int, entrada:page_schemas.User_update,db:session=Depends(get_user)):
     usuario = db.query(page_models.User).filter_by(id=usuarioid).first()
     usuario.nickname = entrada.nickname
@@ -73,7 +73,7 @@ def mod_user(usuarioid: int, entrada:page_schemas.User_update,db:session=Depends
     db.refresh(usuario)
     return usuario
 
-@app.put("/contrasena/{codigo}",response_model=page_schemas.User)
+@router.put("/contrasena/{codigo}",response_model=page_schemas.User)
 def mod_contra(codigo: int, entrada:page_schemas.contrasena_update,db:session=Depends(get_user)):
     usuario = db.query(page_models.User).filter_by(codigo=codigo).first()
     hashed_password = pwd_context.hash(entrada.contrasena)
@@ -82,7 +82,7 @@ def mod_contra(codigo: int, entrada:page_schemas.contrasena_update,db:session=De
     db.refresh(usuario)
     return usuario
 
-@app.put("/email/{email_id}",response_model=page_schemas.User)
+@router.put("/email/{email_id}",response_model=page_schemas.User)
 def mod_email(emailid: int, entrada:page_schemas.email_update,db:session=Depends(get_user)):
     usuario = db.query(page_models.User).filter_by(id=emailid).first()
     usuario.email = entrada.email
@@ -90,7 +90,7 @@ def mod_email(emailid: int, entrada:page_schemas.email_update,db:session=Depends
     db.refresh(usuario)
     return usuario
 
-@app.put("/usersadmin/{usuario_id}",response_model=page_schemas.User)
+@router.put("/usersadmin/{usuario_id}",response_model=page_schemas.User)
 def mod_user_admin(usuarioid: int, entrada:page_schemas.User_update_admin,db:session=Depends(get_user)):
     usuario = db.query(page_models.User).filter_by(id=usuarioid).first()
     usuario.nickname = entrada.nickname
@@ -101,7 +101,7 @@ def mod_user_admin(usuarioid: int, entrada:page_schemas.User_update_admin,db:ses
     db.refresh(usuario)
     return usuario
 
-@app.delete("/users/{usuario_id}",response_model=page_schemas.respuesta)
+@router.delete("/users/{usuario_id}",response_model=page_schemas.respuesta)
 def del_user(usuarioid: int,db:session=Depends(get_user)):
     usuario = db.query(page_models.User).filter_by(id=usuarioid).first()
     db.delete(usuario)

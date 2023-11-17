@@ -1,4 +1,4 @@
-from fastapi import FastAPI , HTTPException
+from fastapi import APIRouter , HTTPException
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -9,7 +9,7 @@ import BD.conexion as page_conexion
 import BD.models as page_models
 
 page_models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+router = APIRouter()
 
 
 def get_pagos():
@@ -19,28 +19,28 @@ def get_pagos():
     finally:
         db.close()
 
-@app.get("/")
+@router.get("/")
 async def Main():
     return RedirectResponse(url="/docs/")
 
-@app.get("/pagos/", response_model=List[page_schemas.pagos])
+@router.get("/pagos/", response_model=List[page_schemas.pagos])
 async def show_pagos(db:session=Depends(get_pagos)):
     pay = db.query(page_models.pagos).all()
     return pay
 
-@app.get("/searchpago/{pagoname}", response_model=List[page_schemas.pagos])
+@router.get("/searchpago/{pagoname}", response_model=List[page_schemas.pagos])
 async def show_pago_user(pagoname: str, db: session = Depends(get_pagos)):
     # Filtra los productos que coinciden con el nombre
     pagos = db.query(page_models.pagos).filter(page_models.pagos.nickname == pagoname).all()
     return pagos
 
-@app.get("/searchtar/{tarname}", response_model=List[page_schemas.pagos])
+@router.get("/searchtar/{tarname}", response_model=List[page_schemas.pagos])
 async def show_pago_user(tarname: str, db: session = Depends(get_pagos)):
     # Filtra los productos que coinciden con el nombre
     pagos = db.query(page_models.pagos).filter(page_models.pagos.numerotarjeta == tarname).all()
     return pagos
 
-@app.post("/pagos/",response_model=page_schemas.pagos)
+@router.post("/pagos/",response_model=page_schemas.pagos)
 def create_pagos(entrada:page_schemas.pagos,db:session=Depends(get_pagos)):
     pay = page_models.pagos(nombretarjeta = entrada.nombretarjeta,numerotarjeta = entrada.numerotarjeta, fecha = entrada.fecha, cvv = entrada.cvv, nickname = entrada.nickname)
     db.add(pay)
@@ -48,7 +48,7 @@ def create_pagos(entrada:page_schemas.pagos,db:session=Depends(get_pagos)):
     db.refresh(pay)
     return pay
 
-@app.put("/pagos/{pagos_id}",response_model=page_schemas.pagos)
+@router.put("/pagos/{pagos_id}",response_model=page_schemas.pagos)
 def mod_pagos(pagosid: int, entrada:page_schemas.pagos_update,db:session=Depends(get_pagos)):
     pay = db.query(page_models.pagos).filter_by(id=pagosid).first()
     pay.nombretarjeta = entrada.nombretarjeta
@@ -60,7 +60,7 @@ def mod_pagos(pagosid: int, entrada:page_schemas.pagos_update,db:session=Depends
     db.refresh(pay)
     return pay
 
-@app.delete("/pagos/{pagos_id}",response_model=page_schemas.respuesta)
+@router.delete("/pagos/{pagos_id}",response_model=page_schemas.respuesta)
 def del_pagos(pagosid: int,db:session=Depends(get_pagos)):
     elipagos = db.query(page_models.pagos).filter_by(id=pagosid).first()
     db.delete(elipagos)

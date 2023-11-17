@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import APIRouter
 from typing import List
 from starlette.responses import RedirectResponse
 from sqlalchemy.orm import session
@@ -9,7 +9,7 @@ import BD.conexion as page_conexion
 import BD.models as page_models
 
 page_models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+router = APIRouter()
 
 
 def get_prov():
@@ -19,22 +19,22 @@ def get_prov():
     finally:
         db.close()
 
-@app.get("/")
+@router.get("/")
 async def Main():
     return RedirectResponse(url="/docs/")
 
-@app.get("/prov/", response_model=List[page_schemas.proveedor])
+@router.get("/prov/", response_model=List[page_schemas.proveedor])
 async def show_prov(db:session=Depends(get_prov)):
     proveedor = db.query(page_models.proveedor).all()
     return proveedor
 
-@app.get("/searchpro/{proname}", response_model=List[page_schemas.proveedor])
+@router.get("/searchpro/{proname}", response_model=List[page_schemas.proveedor])
 async def show_pro_user(proname: str, db: session = Depends(get_prov)):
     # Filtra los productos que coinciden con el nombre
     proveedor = db.query(page_models.proveedor).filter(page_models.proveedor.nombreproveedor == proname).all()
     return proveedor
 
-@app.post("/prov/",response_model=page_schemas.proveedor)
+@router.post("/prov/",response_model=page_schemas.proveedor)
 def create_prov(entrada:page_schemas.proveedor,db:session=Depends(get_prov)):
     proveedor = page_models.proveedor(nombreproveedor = entrada.nombreproveedor,procedencia = entrada.procedencia, telefono = entrada.telefono, correo = entrada.correo)
     db.add(proveedor)
@@ -42,7 +42,7 @@ def create_prov(entrada:page_schemas.proveedor,db:session=Depends(get_prov)):
     db.refresh(proveedor)
     return proveedor
 
-@app.put("/prov/{prov_id}",response_model=page_schemas.proveedor)
+@router.put("/prov/{prov_id}",response_model=page_schemas.proveedor)
 def mod_prov(provid: int, entrada:page_schemas.proveedor_update,db:session=Depends(get_prov)):
     prov = db.query(page_models.proveedor).filter_by(id=provid).first()
     prov.nombreproveedor = entrada.nombreproveedor
@@ -53,7 +53,7 @@ def mod_prov(provid: int, entrada:page_schemas.proveedor_update,db:session=Depen
     db.refresh(prov)
     return prov
 
-@app.delete("/prov/{prov_id}",response_model=page_schemas.respuesta)
+@router.delete("/prov/{prov_id}",response_model=page_schemas.respuesta)
 def del_prov(provid: int,db:session=Depends(get_prov)):
     eliprov = db.query(page_models.proveedor).filter_by(id=provid).first()
     db.delete(eliprov)

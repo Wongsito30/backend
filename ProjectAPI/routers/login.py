@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Annotated, List
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, APIRouter, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -14,7 +14,7 @@ import BD.conexion as page_conexion
 import BD.models as page_models
 
 page_models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+router = APIRouter()
 # to get a string like this run:
 # openssl rand -hex 32
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
@@ -51,7 +51,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app = FastAPI()
 
 
 def verify_password(plain_password, hashed_password):
@@ -116,7 +115,7 @@ async def get_current_active_user(
     return current_user
 
 
-@app.post("/token", response_model=Token)
+@router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db:session=Depends(get_LOGIN)
@@ -135,14 +134,14 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/users/me/", response_model=userini)
+@router.get("/users/me/", response_model=userini)
 async def read_users_me(
     current_user: Annotated[userini, Depends(get_current_active_user)]
 ):
     return current_user
 
 
-@app.get("/users/me/items/")
+@router.get("/users/me/items/")
 async def read_own_items(
     current_user: Annotated[userini, Depends(get_current_active_user)]
 ):
