@@ -13,7 +13,7 @@ from routers import user
 from routers import Wishlist
 
 app = FastAPI()
-#router
+
 app.include_router(admins.router)
 app.include_router(carrito.router)
 app.include_router(direccion.router)
