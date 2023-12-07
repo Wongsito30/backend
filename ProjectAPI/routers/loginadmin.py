@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Annotated, List
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, APIRouter, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -14,7 +14,7 @@ import BD.conexion as page_conexion
 import BD.models as page_models
 
 page_models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+app = APIRouter()
 # to get a string like this run:
 # openssl rand -hex 32
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
@@ -113,7 +113,7 @@ async def get_current_active_admin(
     return current_user
 
 
-@app.post("/token", response_model=Token)
+@app.post("/tokenadmin", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db:session=Depends(get_adminlog)

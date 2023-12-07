@@ -11,6 +11,8 @@ from routers import stock
 from routers import sucursales
 from routers import user
 from routers import Wishlist
+from routers import loginadmin
+
 
 app = FastAPI()
 
@@ -26,6 +28,8 @@ app.include_router(stock.router)
 app.include_router(sucursales.router)
 app.include_router(user.router)
 app.include_router(Wishlist.router)
+app.include_router(loginadmin.app)
+
 
 @app.get("/")
 async def root():
