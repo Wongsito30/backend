@@ -40,6 +40,12 @@ async def show_users(db:session=Depends(get_user)):
     usuarios = db.query(page_models.User).all()
     return usuarios
 
+@router.get("/login/{nickname}, {password}")
+async def show_pass_login(nickname: str, password: str, db: session = Depends(get_user)):
+    passs = db.query(page_models.User).filter(page_models.User.nickname == nickname, page_models.User.contrasena == password).first()
+
+    return passs
+
 @router.get("/searchusercorreo/{Correo}")
 async def show_pass_correo(correo: str, db: session = Depends(get_user)):
     passs = db.query(page_models.User).filter(page_models.User.email == correo).first()
@@ -57,9 +63,9 @@ async def show_pass_correo(correo: str, db: session = Depends(get_user)):
 
 @router.post("/users/",response_model=page_schemas.User)
 def create_user(entrada:page_schemas.User,db:session=Depends(get_user)):
-    hashed_password = pwd_context.hash(entrada.contrasena)
+   #hashed_password = pwd_context.hash(entrada.contrasena)
     codigo1 = random.randint(1000, 9999)
-    usuario = page_models.User(nickname = entrada.nickname,contrasena = hashed_password, email = entrada.email, estado = entrada.estado, codigo = codigo1)
+    usuario = page_models.User(nickname = entrada.nickname,contrasena = entrada.contrasena, email = entrada.email, estado = entrada.estado, codigo = codigo1)
     db.add(usuario)
     db.commit()
     db.refresh(usuario)

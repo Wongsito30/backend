@@ -12,6 +12,13 @@ class User(BaseModel):
      class Config:
        from_attributes = True
 
+class Userlogin(BaseModel):
+     nickname: str
+     
+     class Config:
+       from_attributes = True
+
+
 class User_update(BaseModel):
      nickname: str
    

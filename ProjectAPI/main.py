@@ -14,7 +14,6 @@ from routers import user
 from routers import Wishlist
 from routers import loginadmin
 
-
 app = FastAPI()
 origins = ["*"]
 
