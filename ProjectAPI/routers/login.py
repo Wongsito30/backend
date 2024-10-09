@@ -76,7 +76,7 @@ def authenticate_user(username: str, password: str, db:session=Depends(get_LOGIN
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+"""def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -84,7 +84,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return encoded_jwt"""
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db:session=Depends(get_LOGIN)):
@@ -128,9 +128,7 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.nickname}, expires_delta=access_token_expires
-    )
+    access_token = user.nickname 
     return {"access_token": access_token, "token_type": "bearer"}
 
 

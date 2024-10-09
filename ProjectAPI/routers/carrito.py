@@ -65,7 +65,7 @@ def mod_car(carid: int, entrada:page_schemas.car_update,db:session=Depends(get_c
     db.refresh(car)
     return car
 
-@router.put("/carcanti/{cantidad_id}",response_model=page_schemas.Car)
+@router.put("/carcanti/{carrito_id}",response_model=page_schemas.Car)
 def mod_cant(cantid: int, entrada:page_schemas.cant_update,db:session=Depends(get_car)):
     cant = db.query(page_models.Car).filter_by(id=cantid).first()
     cant.cantidad = entrada.cantidad

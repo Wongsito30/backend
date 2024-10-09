@@ -63,9 +63,9 @@ async def show_pass_correo(correo: str, db: session = Depends(get_user)):
 
 @router.post("/users/",response_model=page_schemas.User)
 def create_user(entrada:page_schemas.User,db:session=Depends(get_user)):
-   #hashed_password = pwd_context.hash(entrada.contrasena)
+    hashed_password = pwd_context.hash(entrada.contrasena)
     codigo1 = random.randint(1000, 9999)
-    usuario = page_models.User(nickname = entrada.nickname,contrasena = entrada.contrasena, email = entrada.email, estado = entrada.estado, codigo = codigo1)
+    usuario = page_models.User(nickname = entrada.nickname,contrasena = hashed_password, email = entrada.email, estado = entrada.estado, codigo = codigo1)
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
